@@ -1,0 +1,82 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>فاحص يوزرات Roblox</title>
+<style>
+body{font-family:Arial;background:#101629;color:white;padding:18px;max-width:600px;margin:auto}
+main{background:#1b2540;padding:18px;border-radius:18px}
+h1{text-align:center;font-size:25px}
+p{color:#c5cde0;line-height:1.7}
+button,select{padding:13px;border:0;border-radius:10px;font-size:16px;margin:5px 0}
+button{background:#8065ff;color:white;font-weight:bold;width:100%}
+select{width:100%;background:#101629;color:white}
+.item{background:#101629;padding:12px;border-radius:10px;margin:8px 0;display:flex;justify-content:space-between;direction:ltr}
+.good{color:#37df91}.bad{color:#ff7185}.unknown{color:#ffd166}
+</style>
+</head>
+<body>
+<main>
+<h1>🔎 فاحص اليوزرات الرباعية</h1>
+<p>ولّد 100 يوزر حروف وأرقام. لن تظهر علامة الصح إلا إذا نجح التحقق الحقيقي.</p>
+<label for="amount">عدد اليوزرات</label>
+<select id="amount">
+<option value="100">100 يوزر</option>
+<option value="50">50 يوزر</option>
+</select>
+<button id="start">ابدأ الفحص</button>
+<p id="status">جاهز</p>
+<div id="results"></div>
+</main>
+<script>
+const alphabet="abcdefghijklmnopqrstuvwxyz0123456789";
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function check(name){
+ const response=await fetch("https://users.roblox.com/v1/usernames/validate",{
+ method:"POST",
+ headers:{"Content-Type":"application/json"},
+ body:JSON.stringify({username:name,birthday:"2000-01-01"})
+ });
+ if(!response.ok)throw Error("فشل الاتصال");
+ const data=await response.json();
+ if(data.code===0)return "available";
+ if(data.code===1)return "taken";
+ throw Error("تعذّر تحديد النتيجة");
+}
+function generate(){
+ let s="";
+ for(let i=0;i<4;i++)s+=alphabet[Math.floor(Math.random()*alphabet.length)];
+ return s;
+}
+document.getElementById("start").onclick=async()=>{
+ const btn=document.getElementById("start");
+ const results=document.getElementById("results");
+ const status=document.getElementById("status");
+ btn.disabled=true;results.innerHTML="";
+ const amount=Number(document.getElementById("amount").value);
+ const names=new Set();
+ while(names.size<amount)names.add(generate());
+ let i=0;
+ for(const name of names){
+  i++;status.textContent=`جاري الفحص ${i}/${amount}`;
+  const row=document.createElement("div");row.className="item";
+  const n=document.createElement("span");n.textContent=name;
+  const result=document.createElement("span");result.textContent="جاري الفحص…";
+  result.className="unknown";row.append(n,result);results.append(row);
+  try{
+   const state=await check(name);
+   if(state==="available"){result.textContent="✓ متاح";result.className="good";}
+   else{result.textContent="✕ مستخدم / غير صالح";result.className="bad";}
+  }catch(e){
+   result.textContent="؟ تعذّر التحقق";result.className="unknown";
+  }
+  await sleep(400);
+ }
+ status.textContent="انتهت محاولة الفحص. النتائج غير المؤكدة لم تُحسب كمتاحة.";
+ btn.disabled=false;
+};
+</script>
+</body>
+</html>
